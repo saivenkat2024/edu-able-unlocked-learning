@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search, Book, Calendar, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const courseCategories = [
   "All Categories",
@@ -243,8 +243,8 @@ const CoursesPage = () => {
                           <span>{course.enrolled} students</span>
                         </div>
                       </div>
-                      <Button className="w-full bg-edu-purple hover:bg-edu-dark-purple">
-                        View Course
+                      <Button className="w-full bg-edu-purple hover:bg-edu-dark-purple" asChild>
+                        <Link to={`/course/${course.id}`}>View Course</Link>
                       </Button>
                     </CardContent>
                   </Card>

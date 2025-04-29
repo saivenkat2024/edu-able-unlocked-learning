@@ -13,7 +13,7 @@ import BlogPage from "./pages/BlogPage";
 import ContactPage from "./pages/ContactPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import MainLayout from "./components/layout/MainLayout";
-import AccessibilityControls from "./components/accessibility/AccessibilityControls";
+import CourseDetailsPage from "./pages/CourseDetailsPage";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +28,7 @@ const App = () => (
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/courses" element={<CoursesPage />} />
+            <Route path="/course/:id" element={<CourseDetailsPage />} />
             <Route path="/learning" element={<LearningPage />} />
             <Route path="/community" element={<CommunityPage />} />
             <Route path="/blog" element={<BlogPage />} />
@@ -35,7 +36,6 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
-          <AccessibilityControls />
         </MainLayout>
       </BrowserRouter>
     </TooltipProvider>

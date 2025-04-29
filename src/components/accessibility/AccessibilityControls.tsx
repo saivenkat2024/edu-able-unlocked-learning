@@ -28,7 +28,7 @@ const AccessibilityControls = ({ className = '' }: AccessibilityControlsProps) =
   const [textToSpeech, setTextToSpeech] = useState(false);
   const [voiceToText, setVoiceToText] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [recognitionInstance, setRecognitionInstance] = useState<SpeechRecognition | null>(null);
+  const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
   const { toast } = useToast();
 
   // Apply accessibility settings
@@ -101,8 +101,8 @@ const AccessibilityControls = ({ className = '' }: AccessibilityControlsProps) =
 
   const startListening = () => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
+      const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognitionAPI();
       
       recognition.continuous = true;
       recognition.interimResults = true;

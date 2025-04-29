@@ -382,7 +382,7 @@ const CourseDetailsPage = () => {
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isListening, setIsListening] = useState(false);
-  const [recognitionInstance, setRecognitionInstance] = useState<SpeechRecognition | null>(null);
+  const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
 
   // Initialize form
   const form = useForm<RegistrationFormValues>({
@@ -448,8 +448,8 @@ const CourseDetailsPage = () => {
   // Voice to text functionality
   const startListening = (fieldName?: keyof RegistrationFormValues) => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
+      const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognitionAPI();
       
       recognition.continuous = true;
       recognition.interimResults = true;

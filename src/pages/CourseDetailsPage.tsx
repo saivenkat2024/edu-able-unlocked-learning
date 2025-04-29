@@ -1,10 +1,32 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { Clock, User, DollarSign, BookOpen, Calendar, CheckCircle } from 'lucide-react';
+import { 
+  Clock, 
+  User, 
+  BookOpen, 
+  Calendar, 
+  CheckCircle, 
+  Mic,
+  MicOff
+} from 'lucide-react';
+import { 
+  Form, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormControl, 
+  FormDescription, 
+  FormMessage 
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
 // Mock course data - in a real app, this would come from an API or database
 const coursesData = [
@@ -318,6 +340,21 @@ const coursesData = [
   }
 ];
 
+// Form schema for registration
+const registrationFormSchema = z.object({
+  fullName: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  phone: z.string().min(10, { message: "Please enter a valid phone number" }),
+  education: z.string().min(2, { message: "Please enter your educational background" }),
+  experience: z.string().optional(),
+  accommodations: z.string().optional(),
+  termsAccepted: z.boolean().refine(value => value === true, {
+    message: "You must accept the terms and conditions"
+  }),
+});
+
+type RegistrationFormValues = z.infer<typeof registrationFormSchema>;
+
 // Text-to-speech function
 const textToSpeech = (text: string) => {
   if ('speechSynthesis' in window) {
@@ -342,6 +379,24 @@ const CourseDetailsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const [recognitionInstance, setRecognitionInstance] = useState<SpeechRecognition | null>(null);
+
+  // Initialize form
+  const form = useForm<RegistrationFormValues>({
+    resolver: zodResolver(registrationFormSchema),
+    defaultValues: {
+      fullName: "",
+      email: "",
+      phone: "",
+      education: "",
+      experience: "",
+      accommodations: "",
+      termsAccepted: false,
+    }
+  });
 
   useEffect(() => {
     // Simulate loading course data
@@ -353,11 +408,13 @@ const CourseDetailsPage = () => {
     }, 500);
   }, [courseId]);
 
-  const handleEnrollClick = () => {
+  const handleRegistrationSubmit = (values: RegistrationFormValues) => {
     toast({
-      title: "Enrollment initiated",
-      description: `You've started enrollment for ${course?.title}. Complete payment to gain access.`,
+      title: "Registration submitted",
+      description: `Thank you for registering for ${course?.title}. We'll contact you shortly with more information.`,
     });
+    setShowRegistrationForm(false);
+    console.log("Registration values:", values);
   };
 
   const toggleSpeech = (text: string) => {
@@ -385,6 +442,70 @@ const CourseDetailsPage = () => {
         description: "Your browser doesn't support text-to-speech functionality.",
         variant: "destructive"
       });
+    }
+  };
+
+  // Voice to text functionality
+  const startListening = (fieldName?: keyof RegistrationFormValues) => {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+      
+      recognition.onstart = () => {
+        setIsListening(true);
+        toast({
+          title: "Voice recognition active",
+          description: "Start speaking now...",
+        });
+      };
+      
+      recognition.onresult = (event) => {
+        const transcript = Array.from(event.results)
+          .map(result => result[0])
+          .map(result => result.transcript)
+          .join('');
+        
+        setTranscript(transcript);
+        
+        // If a field is specified, update its value
+        if (fieldName) {
+          form.setValue(fieldName, transcript);
+        }
+      };
+      
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error', event.error);
+        setIsListening(false);
+        toast({
+          title: "Voice recognition error",
+          description: `Error: ${event.error}`,
+          variant: "destructive"
+        });
+      };
+      
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+      
+      recognition.start();
+      setRecognitionInstance(recognition);
+    } else {
+      toast({
+        title: "Voice Recognition Unavailable",
+        description: "Your browser doesn't support voice recognition.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const stopListening = () => {
+    if (recognitionInstance) {
+      recognitionInstance.stop();
+      setIsListening(false);
     }
   };
 
@@ -447,8 +568,11 @@ const CourseDetailsPage = () => {
                 </div>
               </div>
               <div className="flex flex-wrap gap-3 mb-8">
-                <Button onClick={handleEnrollClick} className="bg-white text-edu-purple hover:bg-gray-100">
-                  Enroll Now - ${course.price}
+                <Button 
+                  onClick={() => setShowRegistrationForm(true)} 
+                  className="bg-white text-edu-purple hover:bg-gray-100"
+                >
+                  Register for This Course
                 </Button>
                 <Button 
                   variant="outline" 
@@ -469,6 +593,232 @@ const CourseDetailsPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Registration form modal */}
+      {showRegistrationForm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">Register for {course.title}</h2>
+              <Button 
+                variant="ghost" 
+                onClick={() => setShowRegistrationForm(false)}
+                className="h-8 w-8 p-0 rounded-full"
+              >
+                <span className="sr-only">Close</span>
+                ✕
+              </Button>
+            </div>
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleRegistrationSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="fullName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Full Name</FormLabel>
+                        <div className="flex">
+                          <FormControl>
+                            <Input placeholder="John Doe" {...field} />
+                          </FormControl>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => isListening ? stopListening() : startListening('fullName')}
+                            className="ml-2"
+                          >
+                            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <div className="flex">
+                          <FormControl>
+                            <Input type="email" placeholder="your@email.com" {...field} />
+                          </FormControl>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => isListening ? stopListening() : startListening('email')}
+                            className="ml-2"
+                          >
+                            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone Number</FormLabel>
+                        <div className="flex">
+                          <FormControl>
+                            <Input placeholder="+1 (555) 123-4567" {...field} />
+                          </FormControl>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => isListening ? stopListening() : startListening('phone')}
+                            className="ml-2"
+                          >
+                            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="education"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Educational Background</FormLabel>
+                        <div className="flex">
+                          <FormControl>
+                            <Input placeholder="Highest degree/qualification" {...field} />
+                          </FormControl>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => isListening ? stopListening() : startListening('education')}
+                            className="ml-2"
+                          >
+                            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="experience"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Relevant Experience (optional)</FormLabel>
+                      <div className="flex">
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Tell us about any relevant experience you have in this field"
+                            className="resize-none"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => isListening ? stopListening() : startListening('experience')}
+                          className="ml-2 self-start"
+                        >
+                          {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="accommodations"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Accessibility Requirements (optional)</FormLabel>
+                      <div className="flex">
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Let us know if you need any accessibility accommodations"
+                            className="resize-none"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => isListening ? stopListening() : startListening('accommodations')}
+                          className="ml-2 self-start"
+                        >
+                          {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                      <FormDescription>
+                        We're committed to making our courses accessible to all learners.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="termsAccepted"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-4 border">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          I accept the terms and conditions and privacy policy
+                        </FormLabel>
+                        <FormDescription>
+                          By registering, you agree to our terms of service and privacy policy.
+                        </FormDescription>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="flex gap-4 justify-end">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setShowRegistrationForm(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="bg-edu-purple hover:bg-edu-dark-purple"
+                  >
+                    Submit Registration
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </div>
+        </div>
+      )}
 
       {/* Course details */}
       <div className="container mx-auto px-4 py-12">
@@ -538,10 +888,10 @@ const CourseDetailsPage = () => {
               
               <div className="space-y-4">
                 <div className="flex items-center">
-                  <DollarSign className="h-5 w-5 text-edu-purple mr-3" />
+                  <Calendar className="h-5 w-5 text-edu-purple mr-3" />
                   <div>
-                    <p className="text-gray-500 text-sm">Price</p>
-                    <p className="font-medium">${course.price}</p>
+                    <p className="text-gray-500 text-sm">Start Date</p>
+                    <p className="font-medium">Flexible Start</p>
                   </div>
                 </div>
                 
@@ -587,8 +937,11 @@ const CourseDetailsPage = () => {
                 ))}
               </ul>
               
-              <Button onClick={handleEnrollClick} className="w-full bg-edu-purple hover:bg-edu-dark-purple">
-                Enroll Now
+              <Button 
+                onClick={() => setShowRegistrationForm(true)} 
+                className="w-full bg-edu-purple hover:bg-edu-dark-purple"
+              >
+                Register for This Course
               </Button>
               
               <Button 
@@ -596,7 +949,7 @@ const CourseDetailsPage = () => {
                 className="w-full mt-3"
                 onClick={() => toggleSpeech(`Course information: This is a ${course.level} level course taught by ${course.instructor}. 
                   It runs for ${course.duration} with a time commitment of ${course.hoursPerWeek} hours per week. 
-                  The price is ${course.price} dollars. Prerequisites include: ${course.prerequisites.join(', ')}.`)}
+                  Prerequisites include: ${course.prerequisites.join(', ')}.`)}
               >
                 {isSpeaking ? "Stop Reading" : "Read Course Info Aloud"}
               </Button>

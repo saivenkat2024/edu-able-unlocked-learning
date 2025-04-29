@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/components/ui/use-toast";
-import { Volume, VolumeX, Eye, EyeOff, Wheelchair } from 'lucide-react';
+import { Volume, VolumeX, Eye, EyeOff, Accessibility } from 'lucide-react';
 import { 
   Collapsible,
   CollapsibleContent,
@@ -94,7 +94,7 @@ const AccessibilityControls = ({ className = '' }: AccessibilityControlsProps) =
       >
         <CollapsibleTrigger asChild>
           <Button variant="default" size="icon" className="bg-edu-purple hover:bg-edu-dark-purple rounded-full h-12 w-12">
-            <Wheelchair className="h-6 w-6" />
+            <Accessibility className="h-6 w-6" />
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="p-4 space-y-4 min-w-[300px]">

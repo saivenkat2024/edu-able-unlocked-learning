@@ -3,6 +3,7 @@ import React from 'react';
 import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
 import KeyboardFocusManager from '@/components/accessibility/KeyboardFocusManager';
+import AccessibilityControls from '@/components/accessibility/AccessibilityControls';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -16,6 +17,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       <main className="flex-grow">
         {children}
       </main>
+      <AccessibilityControls />
       <Footer />
     </div>
   );

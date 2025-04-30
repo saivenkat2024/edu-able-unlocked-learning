@@ -1,976 +1,165 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
-import { 
-  Clock, 
-  User, 
-  BookOpen, 
-  Calendar, 
-  CheckCircle, 
-  Mic,
-  MicOff
-} from 'lucide-react';
-import { 
-  Form, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormControl, 
-  FormDescription, 
-  FormMessage 
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
 
-// Mock course data - in a real app, this would come from an API or database
-const coursesData = [
+import { useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { CourseRegistrationDialog } from "@/components/courses/CourseRegistrationDialog";
+
+// Mock data for now - in a real app, this would come from your API/backend
+const mockCourses = [
   {
     id: 1,
     title: "Introduction to Web Development",
-    description: "Learn the fundamentals of HTML, CSS, and JavaScript to build responsive websites.",
-    longDescription: "This comprehensive course covers everything you need to know to start building modern, responsive websites from scratch. You'll learn HTML5 for structure, CSS3 for styling, and JavaScript for interactivity. By the end of this course, you'll have built several real-world projects and gained the skills needed to create your own web applications.",
-    instructor: "Alex Morgan",
-    instructorBio: "Alex has over 10 years of experience in web development and has worked with companies like Google and Facebook. He's passionate about teaching beginners and making complex concepts easy to understand.",
-    level: "Beginner",
+    description: "Learn the basics of HTML, CSS, and JavaScript to build modern websites.",
+    image: "/placeholder.svg",
     duration: "8 weeks",
-    hoursPerWeek: 10,
-    enrolled: 1250,
-    category: "Web Development",
-    price: 99.99,
-    rating: 4.8,
-    reviewCount: 356,
-    language: "English",
-    prerequisites: ["Basic computer skills", "No prior programming experience required"],
-    learningOutcomes: [
-      "Build responsive websites using HTML, CSS, and JavaScript",
-      "Understand web development fundamentals and best practices",
-      "Create interactive web elements and basic animations",
-      "Deploy websites to the internet",
-      "Optimize websites for different devices"
-    ],
-    modules: [
-      {
-        title: "HTML Fundamentals",
-        lessons: 8,
-        duration: "1 week"
-      },
-      {
-        title: "CSS Styling and Layout",
-        lessons: 10,
-        duration: "2 weeks"
-      },
-      {
-        title: "JavaScript Basics",
-        lessons: 12,
-        duration: "3 weeks"
-      },
-      {
-        title: "Building Responsive Web Projects",
-        lessons: 6,
-        duration: "2 weeks"
-      }
-    ],
-    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1472&q=80"
+    level: "Beginner",
+    price: "$299",
+    instructor: "Jane Smith",
+    startDate: "June 15, 2025",
+    curriculum: [
+      "HTML Fundamentals",
+      "CSS Styling",
+      "JavaScript Basics",
+      "Responsive Design",
+      "Web Accessibility",
+      "Version Control with Git",
+      "Deployment Basics",
+      "Final Project"
+    ]
   },
   {
     id: 2,
-    title: "Python for Data Science",
-    description: "Master Python programming and its applications in data analysis and visualization.",
-    longDescription: "This specialized course teaches you Python programming specifically for data science applications. You'll learn how to use libraries like NumPy, Pandas, and Matplotlib to manipulate, analyze and visualize data. The course includes hands-on projects working with real-world datasets to develop practical skills in data analysis and visualization.",
-    instructor: "Sarah Chen",
-    instructorBio: "Sarah holds a PhD in Computer Science and specializes in machine learning and data analysis. She has published multiple research papers and previously taught at MIT before becoming an online educator.",
-    level: "Intermediate",
+    title: "Advanced React Development",
+    description: "Take your React skills to the next level with advanced patterns and techniques.",
+    image: "/placeholder.svg",
     duration: "10 weeks",
-    hoursPerWeek: 12,
-    enrolled: 980,
-    category: "Data Science",
-    price: 129.99,
-    rating: 4.9,
-    reviewCount: 278,
-    language: "English",
-    prerequisites: ["Basic programming knowledge", "Understanding of algebra concepts"],
-    learningOutcomes: [
-      "Write efficient Python code for data processing",
-      "Analyze and visualize data using Python libraries",
-      "Create data visualizations that tell compelling stories",
-      "Apply statistical methods to extract insights from data",
-      "Build predictive models using machine learning"
-    ],
-    modules: [
-      {
-        title: "Python Programming Basics",
-        lessons: 10,
-        duration: "2 weeks"
-      },
-      {
-        title: "Data Manipulation with NumPy and Pandas",
-        lessons: 8,
-        duration: "2 weeks"
-      },
-      {
-        title: "Data Visualization with Matplotlib and Seaborn",
-        lessons: 6,
-        duration: "2 weeks"
-      },
-      {
-        title: "Statistical Analysis and Machine Learning",
-        lessons: 8,
-        duration: "3 weeks"
-      },
-      {
-        title: "Final Data Science Project",
-        lessons: 4,
-        duration: "1 week"
-      }
-    ],
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80"
+    level: "Intermediate/Advanced",
+    price: "$499",
+    instructor: "John Doe",
+    startDate: "July 10, 2025",
+    curriculum: [
+      "React Hooks Deep Dive",
+      "State Management Solutions",
+      "Performance Optimization",
+      "Server Components",
+      "Testing React Applications",
+      "Authentication Patterns",
+      "Animations and Effects",
+      "Full-Stack Integration",
+      "Deployment Strategies",
+      "Capstone Project"
+    ]
   },
-  {
-    id: 3,
-    title: "Graphic Design Principles",
-    description: "Explore the core concepts of visual design and create stunning graphics.",
-    longDescription: "This course covers all the essential principles of graphic design including color theory, typography, layout, and composition. You'll learn to use professional design software to create logos, marketing materials, social media graphics, and more. The course is designed to build your design portfolio while teaching you the theoretical knowledge needed to make informed design decisions.",
-    instructor: "Miguel Rodriguez",
-    instructorBio: "Miguel is an award-winning graphic designer with over 15 years of experience working with major brands including Nike and Apple. He specializes in branding and identity design and has helped hundreds of students launch their design careers.",
-    level: "Beginner",
-    duration: "6 weeks",
-    hoursPerWeek: 8,
-    enrolled: 750,
-    category: "Graphic Design",
-    price: 89.99,
-    rating: 4.7,
-    reviewCount: 195,
-    language: "English",
-    prerequisites: ["Basic computer skills", "No prior design experience needed"],
-    learningOutcomes: [
-      "Understand fundamental graphic design principles",
-      "Create professional designs using industry-standard software",
-      "Develop an eye for effective design and layout",
-      "Build a portfolio of graphic design projects",
-      "Apply design thinking to solve visual communication problems"
-    ],
-    modules: [
-      {
-        title: "Design Foundations and Color Theory",
-        lessons: 6,
-        duration: "1 week"
-      },
-      {
-        title: "Typography and Text Design",
-        lessons: 8,
-        duration: "1.5 weeks"
-      },
-      {
-        title: "Layout and Composition",
-        lessons: 7,
-        duration: "1.5 weeks"
-      },
-      {
-        title: "Software Skills: Adobe Creative Suite",
-        lessons: 10,
-        duration: "2 weeks"
-      }
-    ],
-    image: "https://images.unsplash.com/photo-1626785774573-4b799315345d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1471&q=80"
-  },
-  {
-    id: 4,
-    title: "Advanced JavaScript Frameworks",
-    description: "Deep dive into modern JavaScript frameworks like React, Vue, and Angular.",
-    longDescription: "Take your JavaScript skills to the next level with this advanced course on modern frameworks. You'll gain hands-on experience with React, Vue, and Angular by building real-world applications. The course covers component architecture, state management, routing, and connecting to APIs. You'll learn best practices for building scalable, maintainable web applications using today's most popular frameworks.",
-    instructor: "Emma Thompson",
-    instructorBio: "Emma is a senior frontend engineer at a leading tech company and has contributed to several open source JavaScript projects. She specializes in React and has helped companies build complex web applications used by millions of users.",
-    level: "Advanced",
-    duration: "12 weeks",
-    hoursPerWeek: 15,
-    enrolled: 620,
-    category: "Web Development",
-    price: 149.99,
-    rating: 4.9,
-    reviewCount: 142,
-    language: "English",
-    prerequisites: ["Strong JavaScript fundamentals", "HTML and CSS experience", "Some experience building web applications"],
-    learningOutcomes: [
-      "Build complex applications with React, Vue, and Angular",
-      "Implement state management solutions like Redux and Vuex",
-      "Create single page applications with client-side routing",
-      "Connect frontend applications to backend APIs",
-      "Deploy and optimize JavaScript applications for production"
-    ],
-    modules: [
-      {
-        title: "Advanced JavaScript Concepts",
-        lessons: 8,
-        duration: "2 weeks"
-      },
-      {
-        title: "React & Redux",
-        lessons: 12,
-        duration: "3 weeks"
-      },
-      {
-        title: "Vue & Vuex",
-        lessons: 10,
-        duration: "2.5 weeks"
-      },
-      {
-        title: "Angular Framework",
-        lessons: 10,
-        duration: "2.5 weeks"
-      },
-      {
-        title: "Building Full-Stack Applications",
-        lessons: 8,
-        duration: "2 weeks"
-      }
-    ],
-    image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80"
-  },
-  {
-    id: 5,
-    title: "Introduction to Spanish",
-    description: "Learn the basics of Spanish language with focus on conversation skills.",
-    longDescription: "This beginner-friendly Spanish course focuses on practical conversation skills and essential grammar. You'll learn everyday vocabulary and phrases through interactive exercises, audio recordings by native speakers, and cultural contexts. The course is designed to get you speaking Spanish from day one with a focus on real-world communication skills.",
-    instructor: "Carlos Martinez",
-    instructorBio: "Carlos is a native Spanish speaker from Madrid with over 10 years of language teaching experience. He specializes in making language learning fun and accessible through practical, conversation-focused methods.",
-    level: "Beginner",
-    duration: "8 weeks",
-    hoursPerWeek: 5,
-    enrolled: 1100,
-    category: "Language Learning",
-    price: 79.99,
-    rating: 4.8,
-    reviewCount: 315,
-    language: "English with Spanish instruction",
-    prerequisites: ["No prior Spanish knowledge required"],
-    learningOutcomes: [
-      "Conduct basic conversations in Spanish",
-      "Understand essential Spanish vocabulary and phrases",
-      "Grasp fundamental Spanish grammar concepts",
-      "Read and write simple Spanish texts",
-      "Develop proper Spanish pronunciation"
-    ],
-    modules: [
-      {
-        title: "Introductions and Greetings",
-        lessons: 5,
-        duration: "1 week"
-      },
-      {
-        title: "Everyday Vocabulary and Phrases",
-        lessons: 8,
-        duration: "2 weeks"
-      },
-      {
-        title: "Basic Grammar and Sentence Structure",
-        lessons: 10,
-        duration: "2.5 weeks"
-      },
-      {
-        title: "Practical Conversation Practice",
-        lessons: 8,
-        duration: "2 weeks"
-      },
-      {
-        title: "Cultural Context and Reading",
-        lessons: 4,
-        duration: "0.5 weeks"
-      }
-    ],
-    image: "https://images.unsplash.com/photo-1616356607338-fd87169ecf1a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80"
-  },
-  {
-    id: 6,
-    title: "Leadership and Management",
-    description: "Develop essential leadership skills to manage teams effectively.",
-    longDescription: "This course is designed for both aspiring and current managers looking to enhance their leadership capabilities. You'll learn proven management techniques, effective communication strategies, conflict resolution, and how to build high-performing teams. The course combines theoretical frameworks with practical scenarios to prepare you for real-world leadership challenges.",
-    instructor: "James Wilson",
-    instructorBio: "James has 20+ years of executive leadership experience across multiple industries. He's served as CEO for two Fortune 500 companies and now focuses on helping others develop their management potential through education and coaching.",
-    level: "Intermediate",
-    duration: "6 weeks",
-    hoursPerWeek: 7,
-    enrolled: 890,
-    category: "Personal Development",
-    price: 119.99,
-    rating: 4.7,
-    reviewCount: 210,
-    language: "English",
-    prerequisites: ["Some work experience recommended", "No specific prior knowledge required"],
-    learningOutcomes: [
-      "Lead teams effectively using proven management strategies",
-      "Communicate with clarity and impact in various business contexts",
-      "Manage conflicts and difficult conversations constructively",
-      "Develop and mentor team members to maximize potential",
-      "Create action plans for personal leadership development"
-    ],
-    modules: [
-      {
-        title: "Leadership Fundamentals and Styles",
-        lessons: 6,
-        duration: "1 week"
-      },
-      {
-        title: "Effective Communication for Leaders",
-        lessons: 7,
-        duration: "1 week"
-      },
-      {
-        title: "Building and Managing High-Performance Teams",
-        lessons: 8,
-        duration: "1.5 weeks"
-      },
-      {
-        title: "Conflict Resolution and Difficult Conversations",
-        lessons: 6,
-        duration: "1 week"
-      },
-      {
-        title: "Strategic Decision Making and Problem Solving",
-        lessons: 8,
-        duration: "1.5 weeks"
-      }
-    ],
-    image: "https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80"
-  }
+  // Add more mock courses as needed
 ];
 
-// Form schema for registration
-const registrationFormSchema = z.object({
-  fullName: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  phone: z.string().min(10, { message: "Please enter a valid phone number" }),
-  education: z.string().min(2, { message: "Please enter your educational background" }),
-  experience: z.string().optional(),
-  accommodations: z.string().optional(),
-  termsAccepted: z.boolean().refine(value => value === true, {
-    message: "You must accept the terms and conditions"
-  }),
-});
-
-type RegistrationFormValues = z.infer<typeof registrationFormSchema>;
-
-// Text-to-speech function
-const textToSpeech = (text: string) => {
-  if ('speechSynthesis' in window) {
-    const synthesis = window.speechSynthesis;
-    synthesis.cancel(); // Stop any current speech
-
-    // Create a new utterance
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    
-    // Speak the text
-    synthesis.speak(utterance);
+const fetchCourse = async (id: string) => {
+  // In a real app, you would fetch the course data from your API
+  // For now, we'll use the mock data
+  const numId = parseInt(id);
+  const course = mockCourses.find(course => course.id === numId);
+  
+  if (!course) {
+    throw new Error("Course not found");
   }
+  
+  return course;
 };
 
-const CourseDetailsPage = () => {
-  const { id: courseIdString } = useParams<{ id: string }>();
-  const courseId = parseInt(courseIdString || "0", 10);
-  const [course, setCourse] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const [isListening, setIsListening] = useState(false);
-  const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
+export default function CourseDetailsPage() {
+  const { id } = useParams<{ id: string }>();
+  const courseId = id || "1"; // Default to the first course if no ID is provided
 
-  // Initialize form
-  const form = useForm<RegistrationFormValues>({
-    resolver: zodResolver(registrationFormSchema),
-    defaultValues: {
-      fullName: "",
-      email: "",
-      phone: "",
-      education: "",
-      experience: "",
-      accommodations: "",
-      termsAccepted: false,
-    }
+  const { data: course, isLoading, error } = useQuery({
+    queryKey: ["course", courseId],
+    queryFn: () => fetchCourse(courseId)
   });
-
-  useEffect(() => {
-    // Simulate loading course data
-    setIsLoading(true);
-    setTimeout(() => {
-      const foundCourse = coursesData.find(c => c.id === courseId);
-      setCourse(foundCourse);
-      setIsLoading(false);
-    }, 500);
-  }, [courseId]);
-
-  const handleRegistrationSubmit = (values: RegistrationFormValues) => {
-    toast({
-      title: "Registration submitted",
-      description: `Thank you for registering for ${course?.title}. We'll contact you shortly with more information.`,
-    });
-    setShowRegistrationForm(false);
-    console.log("Registration values:", values);
-  };
-
-  const toggleSpeech = (text: string) => {
-    if ('speechSynthesis' in window) {
-      const synthesis = window.speechSynthesis;
-      
-      if (isSpeaking) {
-        synthesis.cancel();
-        setIsSpeaking(false);
-      } else {
-        textToSpeech(text);
-        setIsSpeaking(true);
-        
-        // Update state when speech ends
-        synthesis.onvoiceschanged = () => {
-          const voices = synthesis.getVoices();
-          if (voices.length > 0) {
-            // Choose a voice here if needed
-          }
-        };
-      }
-    } else {
-      toast({
-        title: "Text-to-Speech Unavailable",
-        description: "Your browser doesn't support text-to-speech functionality.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Voice to text functionality
-  const startListening = (fieldName?: keyof RegistrationFormValues) => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognitionAPI();
-      
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-      
-      recognition.onstart = () => {
-        setIsListening(true);
-        toast({
-          title: "Voice recognition active",
-          description: "Start speaking now...",
-        });
-      };
-      
-      recognition.onresult = (event) => {
-        const transcript = Array.from(event.results)
-          .map(result => result[0])
-          .map(result => result.transcript)
-          .join('');
-        
-        setTranscript(transcript);
-        
-        // If a field is specified, update its value
-        if (fieldName) {
-          form.setValue(fieldName, transcript);
-        }
-      };
-      
-      recognition.onerror = (event) => {
-        console.error('Speech recognition error', event.error);
-        setIsListening(false);
-        toast({
-          title: "Voice recognition error",
-          description: `Error: ${event.error}`,
-          variant: "destructive"
-        });
-      };
-      
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-      
-      recognition.start();
-      setRecognitionInstance(recognition);
-    } else {
-      toast({
-        title: "Voice Recognition Unavailable",
-        description: "Your browser doesn't support voice recognition.",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const stopListening = () => {
-    if (recognitionInstance) {
-      recognitionInstance.stop();
-      setIsListening(false);
-    }
-  };
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-16 flex justify-center">
-        <div className="animate-pulse flex flex-col items-center w-full max-w-4xl">
-          <div className="w-full h-64 bg-gray-200 rounded-lg mb-8"></div>
-          <div className="w-3/4 h-10 bg-gray-200 rounded mb-4"></div>
-          <div className="w-full h-4 bg-gray-200 rounded mb-2"></div>
-          <div className="w-full h-4 bg-gray-200 rounded mb-2"></div>
-          <div className="w-5/6 h-4 bg-gray-200 rounded mb-8"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-            <div className="h-20 bg-gray-200 rounded"></div>
-            <div className="h-20 bg-gray-200 rounded"></div>
-            <div className="h-20 bg-gray-200 rounded"></div>
-            <div className="h-20 bg-gray-200 rounded"></div>
-          </div>
+      <div className="container mx-auto py-12">
+        <div className="animate-pulse">
+          <div className="h-10 bg-gray-200 rounded w-3/4 mb-6"></div>
+          <div className="h-64 bg-gray-200 rounded mb-6"></div>
+          <div className="h-8 bg-gray-200 rounded w-1/2 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-5/6"></div>
         </div>
       </div>
     );
   }
 
-  if (!course) {
+  if (error || !course) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <h2 className="text-3xl font-bold mb-4">Course Not Found</h2>
-        <p className="mb-8">We couldn't find the course you're looking for.</p>
-        <Button asChild>
-          <Link to="/courses">Back to Courses</Link>
-        </Button>
+      <div className="container mx-auto py-12 text-center">
+        <h1 className="text-2xl font-bold text-red-600 mb-4">Error Loading Course</h1>
+        <p className="text-gray-600">
+          We couldn't find the course you're looking for. Please try again or browse our other courses.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Hero section */}
-      <div className="bg-gradient-to-r from-edu-purple/90 to-edu-blue/90 py-16">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col lg:flex-row gap-8 items-center">
-            <div className="lg:w-1/2">
-              <div className="flex items-start mb-4">
-                <span className="bg-white text-edu-purple text-sm font-medium px-3 py-1 rounded-full">
-                  {course.category}
-                </span>
-                <span className="ml-2 bg-gray-100 text-gray-700 text-sm font-medium px-3 py-1 rounded-full">
-                  {course.level}
-                </span>
-              </div>
-              <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">{course.title}</h1>
-              <div className="flex items-center text-white mb-6">
-                <div className="flex items-center mr-4">
-                  <User className="h-5 w-5 mr-2" />
-                  <span>{course.instructor}</span>
-                </div>
-                <div className="flex items-center">
-                  <Clock className="h-5 w-5 mr-2" />
-                  <span>{course.duration}</span>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-3 mb-8">
-                <Button 
-                  onClick={() => setShowRegistrationForm(true)} 
-                  className="bg-white text-edu-purple hover:bg-gray-100"
-                >
-                  Register for This Course
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="text-white border-white hover:bg-white/20"
-                  onClick={() => toggleSpeech(`Course: ${course.title}. Description: ${course.longDescription}`)}
-                >
-                  {isSpeaking ? "Stop Text-to-Speech" : "Read Description Aloud"}
-                </Button>
-              </div>
-            </div>
-            <div className="lg:w-1/2">
-              <img 
-                src={course.image} 
-                alt={course.title} 
-                className="w-full h-auto rounded-lg shadow-xl"
-              />
-            </div>
+    <div className="container mx-auto py-12 px-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
+          
+          <div className="mb-8">
+            <img 
+              src={course.image} 
+              alt={course.title} 
+              className="w-full h-64 object-cover rounded-lg"
+            />
+          </div>
+          
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold mb-4">Course Description</h2>
+            <p className="text-gray-700">{course.description}</p>
+          </div>
+          
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold mb-4">What You'll Learn</h2>
+            <ul className="list-disc pl-6 space-y-2">
+              {course.curriculum.map((item, index) => (
+                <li key={index} className="text-gray-700">{item}</li>
+              ))}
+            </ul>
           </div>
         </div>
-      </div>
-
-      {/* Registration form modal */}
-      {showRegistrationForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">Register for {course.title}</h2>
-              <Button 
-                variant="ghost" 
-                onClick={() => setShowRegistrationForm(false)}
-                className="h-8 w-8 p-0 rounded-full"
-              >
-                <span className="sr-only">Close</span>
-                ✕
-              </Button>
+        
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-lg border p-6 shadow-sm sticky top-24">
+            <h2 className="text-xl font-semibold mb-4">Course Details</h2>
+            
+            <div className="space-y-4 mb-6">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Duration:</span>
+                <span className="font-medium">{course.duration}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Level:</span>
+                <span className="font-medium">{course.level}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Instructor:</span>
+                <span className="font-medium">{course.instructor}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Start Date:</span>
+                <span className="font-medium">{course.startDate}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Price:</span>
+                <span className="font-bold text-lg">{course.price}</span>
+              </div>
             </div>
             
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleRegistrationSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="fullName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Full Name</FormLabel>
-                        <div className="flex">
-                          <FormControl>
-                            <Input placeholder="John Doe" {...field} />
-                          </FormControl>
-                          <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => isListening ? stopListening() : startListening('fullName')}
-                            className="ml-2"
-                          >
-                            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <div className="flex">
-                          <FormControl>
-                            <Input type="email" placeholder="your@email.com" {...field} />
-                          </FormControl>
-                          <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => isListening ? stopListening() : startListening('email')}
-                            className="ml-2"
-                          >
-                            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
-                        <div className="flex">
-                          <FormControl>
-                            <Input placeholder="+1 (555) 123-4567" {...field} />
-                          </FormControl>
-                          <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => isListening ? stopListening() : startListening('phone')}
-                            className="ml-2"
-                          >
-                            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="education"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Educational Background</FormLabel>
-                        <div className="flex">
-                          <FormControl>
-                            <Input placeholder="Highest degree/qualification" {...field} />
-                          </FormControl>
-                          <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => isListening ? stopListening() : startListening('education')}
-                            className="ml-2"
-                          >
-                            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <FormField
-                  control={form.control}
-                  name="experience"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Relevant Experience (optional)</FormLabel>
-                      <div className="flex">
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Tell us about any relevant experience you have in this field"
-                            className="resize-none"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => isListening ? stopListening() : startListening('experience')}
-                          className="ml-2 self-start"
-                        >
-                          {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="accommodations"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Accessibility Requirements (optional)</FormLabel>
-                      <div className="flex">
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Let us know if you need any accessibility accommodations"
-                            className="resize-none"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => isListening ? stopListening() : startListening('accommodations')}
-                          className="ml-2 self-start"
-                        >
-                          {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                      <FormDescription>
-                        We're committed to making our courses accessible to all learners.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="termsAccepted"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-4 border">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          I accept the terms and conditions and privacy policy
-                        </FormLabel>
-                        <FormDescription>
-                          By registering, you agree to our terms of service and privacy policy.
-                        </FormDescription>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="flex gap-4 justify-end">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setShowRegistrationForm(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    className="bg-edu-purple hover:bg-edu-dark-purple"
-                  >
-                    Submit Registration
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </div>
-        </div>
-      )}
-
-      {/* Course details */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main content */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm p-8 mb-8">
-              <h2 className="text-2xl font-bold mb-4">About This Course</h2>
-              <p className="text-gray-700 mb-6">{course.longDescription}</p>
-              <Button 
-                variant="outline"
-                onClick={() => toggleSpeech(course.longDescription)}
-                className="text-edu-purple border-edu-purple hover:bg-edu-purple/10"
-              >
-                {isSpeaking ? "Stop Reading" : "Read Aloud"}
-              </Button>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-8 mb-8">
-              <h2 className="text-2xl font-bold mb-4">What You'll Learn</h2>
-              <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {course.learningOutcomes.map((outcome: string, index: number) => (
-                  <li key={index} className="flex items-start">
-                    <CheckCircle className="h-5 w-5 text-edu-purple mr-2 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-700">{outcome}</span>
-                  </li>
-                ))}
-              </ul>
-              <Button 
-                variant="outline" 
-                className="mt-6 text-edu-purple border-edu-purple hover:bg-edu-purple/10"
-                onClick={() => toggleSpeech(`What you'll learn in this course: ${course.learningOutcomes.join('. ')}`)}
-              >
-                {isSpeaking ? "Stop Reading" : "Read Learning Outcomes Aloud"}
-              </Button>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-8">
-              <h2 className="text-2xl font-bold mb-4">Course Content</h2>
-              <div className="space-y-4">
-                {course.modules.map((module: any, index: number) => (
-                  <Card key={index} className="p-4 border">
-                    <div className="flex justify-between items-center">
-                      <h3 className="font-medium">{module.title}</h3>
-                      <div className="text-sm text-gray-500">
-                        {module.lessons} lessons • {module.duration}
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-              <Button 
-                variant="outline" 
-                className="mt-6 text-edu-purple border-edu-purple hover:bg-edu-purple/10"
-                onClick={() => toggleSpeech(`Course modules: ${course.modules.map((m: any) => 
-                  `${m.title}, containing ${m.lessons} lessons over ${m.duration}`).join('. ')}`)}
-              >
-                {isSpeaking ? "Stop Reading" : "Read Modules Aloud"}
-              </Button>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm p-6 mb-6 sticky top-4">
-              <h3 className="text-xl font-bold mb-4">Course Information</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center">
-                  <Calendar className="h-5 w-5 text-edu-purple mr-3" />
-                  <div>
-                    <p className="text-gray-500 text-sm">Start Date</p>
-                    <p className="font-medium">Flexible Start</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center">
-                  <Clock className="h-5 w-5 text-edu-purple mr-3" />
-                  <div>
-                    <p className="text-gray-500 text-sm">Duration</p>
-                    <p className="font-medium">{course.duration}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center">
-                  <Calendar className="h-5 w-5 text-edu-purple mr-3" />
-                  <div>
-                    <p className="text-gray-500 text-sm">Time Commitment</p>
-                    <p className="font-medium">{course.hoursPerWeek} hours/week</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center">
-                  <User className="h-5 w-5 text-edu-purple mr-3" />
-                  <div>
-                    <p className="text-gray-500 text-sm">Instructor</p>
-                    <p className="font-medium">{course.instructor}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center">
-                  <BookOpen className="h-5 w-5 text-edu-purple mr-3" />
-                  <div>
-                    <p className="text-gray-500 text-sm">Level</p>
-                    <p className="font-medium">{course.level}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <hr className="my-6" />
-              
-              <h4 className="font-semibold mb-2">Prerequisites:</h4>
-              <ul className="list-disc list-inside text-gray-700 mb-6">
-                {course.prerequisites.map((prereq: string, index: number) => (
-                  <li key={index}>{prereq}</li>
-                ))}
-              </ul>
-              
-              <Button 
-                onClick={() => setShowRegistrationForm(true)} 
-                className="w-full bg-edu-purple hover:bg-edu-dark-purple"
-              >
-                Register for This Course
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="w-full mt-3"
-                onClick={() => toggleSpeech(`Course information: This is a ${course.level} level course taught by ${course.instructor}. 
-                  It runs for ${course.duration} with a time commitment of ${course.hoursPerWeek} hours per week. 
-                  Prerequisites include: ${course.prerequisites.join(', ')}.`)}
-              >
-                {isSpeaking ? "Stop Reading" : "Read Course Info Aloud"}
-              </Button>
-            </div>
-            
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="text-xl font-bold mb-4">About the Instructor</h3>
-              <p className="text-gray-700 mb-4">{course.instructorBio}</p>
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => toggleSpeech(`About the instructor: ${course.instructorBio}`)}
-              >
-                {isSpeaking ? "Stop Reading" : "Read Instructor Bio Aloud"}
-              </Button>
-            </div>
+            <CourseRegistrationDialog courseId={course.id} courseName={course.title} />
           </div>
         </div>
       </div>
     </div>
   );
-};
-
-export default CourseDetailsPage;
+}

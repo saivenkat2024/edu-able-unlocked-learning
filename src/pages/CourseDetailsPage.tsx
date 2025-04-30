@@ -100,13 +100,16 @@ export default function CourseDetailsPage() {
 
   const { data: course, isLoading: courseLoading, error: courseError } = useQuery({
     queryKey: ["course", courseId],
-    queryFn: () => fetchCourse(courseId)
+    queryFn: () => fetchCourse(courseId),
+    retry: 1, // Limit retry attempts
+    staleTime: 1000 * 60 * 5 // Cache results for 5 minutes
   });
 
   const { data: isEnrolled = false, isLoading: enrollmentLoading } = useQuery({
     queryKey: ["enrollment", courseId],
     queryFn: () => checkEnrollmentStatus(courseId),
-    retry: false
+    retry: false,
+    enabled: !!courseId // Only run if courseId is available
   });
 
   if (courseLoading) {

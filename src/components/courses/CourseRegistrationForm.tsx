@@ -61,6 +61,8 @@ export function CourseRegistrationForm({ courseId, courseName, onSuccess }: Cour
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
+      console.log("Submitting form data:", { courseId, ...data });
+      
       const { error } = await supabase.from("course_registrations").insert({
         course_id: courseId,
         full_name: data.full_name,
@@ -73,6 +75,7 @@ export function CourseRegistrationForm({ courseId, courseName, onSuccess }: Cour
       });
 
       if (error) {
+        console.error("Error submitting registration:", error);
         throw error;
       }
 
@@ -88,6 +91,7 @@ export function CourseRegistrationForm({ courseId, courseName, onSuccess }: Cour
       form.reset();
       if (onSuccess) onSuccess();
     } catch (error: any) {
+      console.error("Registration error:", error);
       toast({
         title: "Registration failed",
         description: error.message || "There was a problem submitting your registration.",

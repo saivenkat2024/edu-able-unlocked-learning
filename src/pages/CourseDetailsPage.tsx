@@ -4,7 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { CourseRegistrationDialog } from "@/components/courses/CourseRegistrationDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, Volume2, VolumeX } from "lucide-react";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock data for now - in a real app, this would come from your API/backend
 const mockCourses = [
@@ -97,6 +100,8 @@ const checkEnrollmentStatus = async (courseId: string) => {
 export default function CourseDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const courseId = id || "1"; // Default to the first course if no ID is provided
+  const [isReading, setIsReading] = useState(false);
+  const { toast } = useToast();
 
   const { data: course, isLoading: courseLoading, error: courseError } = useQuery({
     queryKey: ["course", courseId],
@@ -111,6 +116,64 @@ export default function CourseDetailsPage() {
     retry: false,
     enabled: !!courseId // Only run if courseId is available
   });
+
+  // Text-to-speech functionality
+  const speakText = (text: string) => {
+    if ('speechSynthesis' in window) {
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
+      
+      if (isReading) {
+        setIsReading(false);
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      
+      // Get available voices
+      const voices = window.speechSynthesis.getVoices();
+      // Try to use a natural sounding English voice if available
+      const preferredVoice = voices.find(voice => 
+        voice.lang.includes('en') && voice.name.includes('Google') || voice.name.includes('Samantha')
+      );
+      
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+
+      utterance.rate = 0.9; // Slightly slower for better comprehension
+      utterance.pitch = 1;
+      
+      // Event handlers
+      utterance.onstart = () => setIsReading(true);
+      utterance.onend = () => setIsReading(false);
+      utterance.onerror = (e) => {
+        console.error('Speech synthesis error:', e);
+        setIsReading(false);
+        toast({
+          title: "Reading Error",
+          description: "There was a problem with the text-to-speech service.",
+          variant: "destructive"
+        });
+      };
+      
+      window.speechSynthesis.speak(utterance);
+    } else {
+      toast({
+        title: "Feature Not Available",
+        description: "Text-to-speech is not supported in your browser.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleReadAloud = () => {
+    if (!course) return;
+    
+    // Prepare the text to be read
+    const textToRead = `Course: ${course.title}. ${course.description}. This course covers the following topics: ${course.curriculum.join(", ")}`;
+    speakText(textToRead);
+  };
 
   if (courseLoading) {
     return (
@@ -142,7 +205,19 @@ export default function CourseDetailsPage() {
     <div className="container mx-auto py-12 px-4">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-3xl font-bold">
+              {course.title}
+            </h1>
+            <Button
+              onClick={handleReadAloud}
+              variant="outline"
+              className="flex items-center gap-2 bg-edu-purple/10 text-edu-purple hover:bg-edu-purple hover:text-white"
+            >
+              {isReading ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              {isReading ? "Stop Reading" : "Read Aloud"}
+            </Button>
+          </div>
           
           <div className="mb-8">
             <img 

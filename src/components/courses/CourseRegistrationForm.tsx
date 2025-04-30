@@ -82,8 +82,8 @@ export function CourseRegistrationForm({ courseId, courseName, onSuccess }: Cour
       });
       
       // Invalidate the enrollments query to trigger a refetch
-      queryClient.invalidateQueries({ queryKey: ['enrollments'] });
-      queryClient.invalidateQueries({ queryKey: ['course', courseId.toString()] });
+      queryClient.invalidateQueries({ queryKey: ['enrollment'] });
+      queryClient.invalidateQueries({ queryKey: ['enrollment', courseId.toString()] });
       
       form.reset();
       if (onSuccess) onSuccess();
@@ -100,7 +100,6 @@ export function CourseRegistrationForm({ courseId, courseName, onSuccess }: Cour
 
   return (
     <div className="p-6 bg-white rounded-lg border shadow-md">
-      <h2 className="text-2xl font-bold mb-4">Register for {courseName}</h2>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField

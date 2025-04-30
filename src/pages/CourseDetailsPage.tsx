@@ -56,26 +56,36 @@ const mockCourses = [
 ];
 
 const fetchCourse = async (id: string) => {
-  // In a real app, you would fetch the course data from your API
-  // For now, we'll use the mock data
-  const numId = parseInt(id);
-  const course = mockCourses.find(course => course.id === numId);
-  
-  if (!course) {
-    throw new Error("Course not found");
+  try {
+    // In a real app, you would fetch the course data from your API
+    // For now, we'll use the mock data
+    const numId = parseInt(id);
+    const course = mockCourses.find(course => course.id === numId);
+    
+    if (!course) {
+      throw new Error("Course not found");
+    }
+    
+    return course;
+  } catch (error) {
+    console.error("Error fetching course:", error);
+    throw error;
   }
-  
-  return course;
 };
 
 const checkEnrollmentStatus = async (courseId: string) => {
   try {
-    // Check if there are any registrations for this course by the current email
-    const { data } = await supabase
+    // Check if there are any registrations for this course
+    const { data, error } = await supabase
       .from("course_registrations")
       .select("*")
       .eq("course_id", parseInt(courseId))
       .limit(1);
+    
+    if (error) {
+      console.error("Error checking enrollment:", error);
+      return false;
+    }
     
     return data && data.length > 0;
   } catch (error) {
@@ -93,7 +103,7 @@ export default function CourseDetailsPage() {
     queryFn: () => fetchCourse(courseId)
   });
 
-  const { data: isEnrolled, isLoading: enrollmentLoading } = useQuery({
+  const { data: isEnrolled = false, isLoading: enrollmentLoading } = useQuery({
     queryKey: ["enrollment", courseId],
     queryFn: () => checkEnrollmentStatus(courseId),
     retry: false

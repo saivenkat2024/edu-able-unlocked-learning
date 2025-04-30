@@ -18,6 +18,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { useQueryClient } from "@tanstack/react-query";
 
 const formSchema = z.object({
   full_name: z.string().min(2, { message: "Full name must be at least 2 characters." }),
@@ -42,6 +43,7 @@ interface CourseRegistrationFormProps {
 export function CourseRegistrationForm({ courseId, courseName, onSuccess }: CourseRegistrationFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -76,8 +78,12 @@ export function CourseRegistrationForm({ courseId, courseName, onSuccess }: Cour
 
       toast({
         title: "Registration submitted!",
-        description: "You have successfully registered for this course.",
+        description: `You have successfully registered for ${courseName}.`,
       });
+      
+      // Invalidate the enrollments query to trigger a refetch
+      queryClient.invalidateQueries({ queryKey: ['enrollments'] });
+      queryClient.invalidateQueries({ queryKey: ['course', courseId.toString()] });
       
       form.reset();
       if (onSuccess) onSuccess();

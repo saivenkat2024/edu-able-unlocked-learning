@@ -2,6 +2,9 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CourseRegistrationDialog } from "@/components/courses/CourseRegistrationDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle } from "lucide-react";
 
 // Mock data for now - in a real app, this would come from your API/backend
 const mockCourses = [
@@ -65,16 +68,38 @@ const fetchCourse = async (id: string) => {
   return course;
 };
 
+const checkEnrollmentStatus = async (courseId: string) => {
+  try {
+    // Check if there are any registrations for this course by the current email
+    const { data } = await supabase
+      .from("course_registrations")
+      .select("*")
+      .eq("course_id", parseInt(courseId))
+      .limit(1);
+    
+    return data && data.length > 0;
+  } catch (error) {
+    console.error("Error checking enrollment status:", error);
+    return false;
+  }
+};
+
 export default function CourseDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const courseId = id || "1"; // Default to the first course if no ID is provided
 
-  const { data: course, isLoading, error } = useQuery({
+  const { data: course, isLoading: courseLoading, error: courseError } = useQuery({
     queryKey: ["course", courseId],
     queryFn: () => fetchCourse(courseId)
   });
 
-  if (isLoading) {
+  const { data: isEnrolled, isLoading: enrollmentLoading } = useQuery({
+    queryKey: ["enrollment", courseId],
+    queryFn: () => checkEnrollmentStatus(courseId),
+    retry: false
+  });
+
+  if (courseLoading) {
     return (
       <div className="container mx-auto py-12">
         <div className="animate-pulse">
@@ -89,7 +114,7 @@ export default function CourseDetailsPage() {
     );
   }
 
-  if (error || !course) {
+  if (courseError || !course) {
     return (
       <div className="container mx-auto py-12 text-center">
         <h1 className="text-2xl font-bold text-red-600 mb-4">Error Loading Course</h1>
@@ -156,7 +181,23 @@ export default function CourseDetailsPage() {
               </div>
             </div>
             
-            <CourseRegistrationDialog courseId={course.id} courseName={course.title} />
+            {isEnrolled ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3 mb-4">
+                <CheckCircle className="text-green-600 h-5 w-5" />
+                <div>
+                  <p className="font-medium text-green-700">You are enrolled!</p>
+                  <p className="text-sm text-green-600">You have registered for this course</p>
+                </div>
+              </div>
+            ) : (
+              <CourseRegistrationDialog courseId={course.id} courseName={course.title} />
+            )}
+            
+            {isEnrolled && (
+              <Badge variant="outline" className="mt-4 w-full justify-center py-2 border-green-200 text-green-700 font-medium">
+                Registered
+              </Badge>
+            )}
           </div>
         </div>
       </div>
